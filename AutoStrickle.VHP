@@ -1,0 +1,30 @@
+!(Configration)VHP{
+
+"Sample Project";&
+  "project-language"; "PhP"
+  "project-time"; "GMT+3"
+  "project-items";&
+    : "PHP Optimization Processes"
+    : "Build-Essence"
+
+} 
+
+!VHP{
+
+  class AutoStrickle{
+
+    public function main(){
+
+      if(VHP.System.GetAuthorization == 0) VHP.Process.Kill();
+      
+      Data ProgData = VHP.Input.Startup.GetData();
+      Process Prg = New Process(VHP.System.ConvertSystem.Process(ProgData));
+      Prg.AddData(VHP.Config.GetData());
+      Prg.Authorization(true);
+      Prg.Shell();
+      
+    } 
+    
+  } 
+
+} 
