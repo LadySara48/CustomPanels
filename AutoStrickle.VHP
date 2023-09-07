@@ -22,7 +22,9 @@
       Prg.AddData(VHP.Config.GetData());
       Prg.Authorization(true);
       Prg.Shell();
-      
+
+      Prg.Visible(true);
+
     } 
     
   } 
