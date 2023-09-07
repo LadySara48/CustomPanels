@@ -15,7 +15,7 @@
 
     public function main(){
 
-      if(VHP.System.GetAuthorization == 0) VHP.Process.Kill();
+      if(VHP.System.GetAuthorization == 0) VHP.Process.Kill(); //Administrator Start
       
       Data ProgData = VHP.Input.Startup.GetData();
       Process Prg = New Process(VHP.System.ConvertSystem.Process(ProgData));
