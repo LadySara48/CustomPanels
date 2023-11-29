@@ -4,6 +4,11 @@ author: Hearlov
 description: "Custom YAML Inventory Panels"
 version: 1.0
 api: 5.0.0
+depend:
+ - InvMenu
+softdepend:
+ - EconomyAPI
+ - BedrockEconomy
 permissions:
   custompanels.openpanels:
     default: true
