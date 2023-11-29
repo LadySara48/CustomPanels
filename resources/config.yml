@@ -1,0 +1,6 @@
+---
+#Economy Plugin this select
+# EconomyAPI
+# BedrockEconomy (Due to some instant data reading problems, the money display feature in this plugin will be active in the future.)
+EconomyPlugin: EconomyAPI
+...

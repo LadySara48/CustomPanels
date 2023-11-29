@@ -1,0 +1,60 @@
+panel:
+  name: "Custom Panels Trixy"
+  command: custompanel
+  description: Custom Panels First Using Panel
+  type: CHEST
+  readonly: true
+  permission: custompanels.settings
+  empty: glass
+  items:
+    0:
+      meta: diamond
+      name: "Give me Diamond"
+      commands:
+        - give=diamond
+    1:
+      meta: emerald
+      name: "Teleport me 10 block up"
+      commands:
+        - cmd=tp {player} ~ ~10 ~
+        - close
+    2:
+      meta: stick
+      name: "you can take me"
+      readonly: false
+      commands:
+        - msg=Only Youu
+    3:
+      meta: carrot
+      name: "I feed you"
+      commands:
+        - cmd=effect {player} saturation 1 255
+        - msg=I, i feed youuu
+    4:
+      meta: poisonous_potato
+      name: "You can hunger?"
+      commands:
+        - cmd=effect {player} hunger 3 255
+        - tms=2000 msg=You hunger haha
+    5:
+      meta: diamond_sword
+      name: "You hand: {player_handitem_vanilla_name}"
+    6:
+      meta: compass
+      name: "X: {x} Y: {y} Z: {z}"
+    7:
+      meta: clock
+      name: "{time} {hour}:{minute}:{second}"
+    8:
+      meta: skull
+      name: "I, i select {random_player}"
+    22:
+      meta: arrow
+      name: Close up
+      commands:
+        - close
+    26:
+      meta: bow
+      name: Reload Panel
+      commands:
+        - reload
