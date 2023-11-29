@@ -33,6 +33,13 @@ Class CustomPanels extends PluginBase{
 	private static $instance = null;
 
 	public function onEnable(): void{
+        if(!class_exists("muqsit\invmenu\InvMenu")){
+            $this->getLogger()->critical("Error, you must have InvMenu Virion to use this plugin. this Plugin disabled");
+            $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function (){
+                $this->getServer()->getPluginManager()->disablePlugin($this);
+            }), 40);
+            return;
+        }
         if(!file_exists($this->getDataFolder() . "config.yml")){
             $this->saveResource("Panel.yml");
         }

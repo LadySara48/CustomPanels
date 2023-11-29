@@ -5,10 +5,10 @@ description: "Custom YAML Inventory Panels"
 version: 1.0
 api: 5.0.0
 depend:
- - InvMenu
+  - DEVirion
 softdepend:
- - EconomyAPI
- - BedrockEconomy
+  - EconomyAPI
+  - BedrockEconomy
 permissions:
   custompanels.openpanels:
     default: true
