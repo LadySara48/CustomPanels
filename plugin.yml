@@ -1,7 +1,7 @@
 name: CustomPanels
 main: hearlov\custompanels\CustomPanels
 author: Hearlov
-description: "Custom YML Inventory Panels this BETA"
+description: "Custom YAML Inventory Panels this BETA"
 version: 1.0-BETA
 api: 5.0.0
 depend:
