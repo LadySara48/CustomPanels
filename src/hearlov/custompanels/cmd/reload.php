@@ -16,14 +16,14 @@ class reload extends Command implements PluginOwned
     {
         parent::__construct("cpreload");
         $this->plugin = $plugin;
-        $this->setDescription("CustomPanels Plugini Panelleri Yeniler");
-        $this->setPermissionMessage("CustomPanels custompanels.settings perm'i Kullanır. Buna sahip olmalısın");
+        $this->setDescription("CustomPanels Plugini Refreshes Panels");
+        $this->setPermissionMessage("CustomPanels Uses custompanels.settings perm. you must have this");
         $this->setPermission("custompanels.settings");
     }
 
     public function execute(CommandSender $sender, string $commandLabel, array $args){
         $this->plugin->reloadState(0);
-        $sender->sendMessage($this->plugin::PREFIX . " Sunucu Panelleri Yeniden Başlatıldı.");
+        $sender->sendMessage($this->plugin::PREFIX . " Server Panels Restarted.");
     }
 
     public function getOwningPlugin(): CustomPanels{

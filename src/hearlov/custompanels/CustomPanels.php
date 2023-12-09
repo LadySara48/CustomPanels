@@ -14,7 +14,7 @@ use pocketmine\{console\ConsoleCommandSender,
     world\Position};
 use hearlov\custompanels\utils\CommandUtil as CU;
 use hearlov\custompanels\utils\MoneyUtil as MU;
-use muqsit\invmenu\{InvMenu, transaction\InvMenuTransaction, transaction\InvMenuTransactionResult, type\InvMenuTypeIds};
+use muqsit\invmenu\{InvMenu, transaction\InvMenuTransaction, transaction\InvMenuTransactionResult, type\InvMenuTypeIds, InvMenuHandler};
 
 use hearlov\custompanels\cmd\reload;
 
@@ -46,6 +46,10 @@ Class CustomPanels extends PluginBase{
         $this->saveDefaultConfig();
 		$this->config = new Config($this->getDataFolder() . "config.yml", Config::YAML);
         $this->reloadState(1);
+
+        if(!InvMenuHandler::isRegistered()){
+            InvMenuHandler::register($this);
+        }
 
         MU::setup($this->config->get("EconomyPlugin"));
 	}
@@ -117,7 +121,7 @@ Class CustomPanels extends PluginBase{
             $time = explode(" ", $command)[0];
             if(!is_numeric($time)) return;
             if($time < 50){
-                $this->getLogger()->warning("SÜRE GEÇİŞLİ KOMUT SISTEMINDE 50 SAYISININ ALTINDA SÜRE İÇERMEMELİDİR.");
+                $this->getLogger()->warning("Duration commands support a minimum of 50 ms and must be multiples of 50.");
                 return;
             }
             $command = substr($command, (strlen($time) + 1));
@@ -153,7 +157,7 @@ Class CustomPanels extends PluginBase{
         $this->panels = [];
         if($state == 0) $this->delCommands();
         $files = glob($this->getDataFolder() . '*.yml', GLOB_ERR);
-        $this->getLogger()->alert("Panel Okuyucuları işleniyor.\n");
+        $this->getLogger()->alert("Panel Readers are being processed.\n");
         foreach($files as $file) {
             if(str_ends_with($file, "config.php")) continue;
             $yamldata = new Config($file, Config::YAML);
@@ -161,7 +165,7 @@ Class CustomPanels extends PluginBase{
             if(!(isset($data["items"]) && isset($data["type"]) && isset($data["name"]) && isset($data["command"]))) continue;
             if(!is_array($data["items"])) continue;
             //A
-            $this->getLogger()->notice($data["command"] . " paneli aktif ediliyor.");
+            $this->getLogger()->notice($data["command"] . " panel is activating...");
             $size = $data["type"] == "DOUBLE_CHEST" ? 54 : 27;
 
             $arr = [];
@@ -191,12 +195,21 @@ Class CustomPanels extends PluginBase{
             $arr["permission"] = $data["permission"] ?? "custompanels.openpanels";
             $this->panels[$data["command"]] = $arr;
             $this->panels[$data["command"]]["name"] = $data["name"];
-            $this->getLogger()->notice($data["command"] . " paneli yüklendi ve $size boyutunda " . count($arr["commands"]) . " adet eşyaya komut yüklendi.");
+            $this->getLogger()->notice($data["command"] . " panel is loaded and has size $size " . count($arr["commands"]) . "Command has been loaded to 1 item.");
             //A
         }
-        $this->getLogger()->alert("Panel Okuyucuları işlendi. Menüler aktif\n");
+        $this->getLogger()->alert("Panel Readers processed. Menus are active\n");
         $this->initCommands($state);
         if($state == 0) $this->reloadCommandMap();
+    }
+
+    private function getEditedMenu(Player $player, SimpleInventory $inv): SimpleInventory{
+        $newenv = new SimpleInventory($inv->getSize());
+        $newenv->setContents($inv->getContents());
+        foreach($newenv->getContents() as $index => $item){
+            if($item->hasCustomName()) $newenv->setItem($index, $item->setCustomName($this->TextGenerate($player, $item, $item->getCustomname())));
+        }
+        return $newenv;
     }
 
     public function command(Player $player, string $command){
@@ -207,7 +220,7 @@ Class CustomPanels extends PluginBase{
         if(!$inventory instanceof SimpleInventory) return;
 
         $envanter = new SimpleInventory($inventory->getSize());
-        $envanter->setContents($inventory->getContents());
+        $envanter->setContents($this->getEditedMenu($player, $inventory)->getContents());
         $inv = InvMenu::create($inventory->getSize() == 54 ? InvMenuTypeIds::TYPE_DOUBLE_CHEST : InvMenuTypeIds::TYPE_CHEST, $envanter);
         foreach($inv->getInventory()->getContents() as $index => $item){ $inv->getInventory()->setItem($index, $item->setCustomName($this->TextGenerate($player, $item, $item->getCustomname()))); }
         $inv->setName($panel["name"]);
@@ -224,7 +237,7 @@ Class CustomPanels extends PluginBase{
                         if ($command == "close") {
                             $inv->onClose($transaction->getPlayer());
                         } elseif ($command == "reload") {
-                            $inv->getInventory()->setContents($inventory->getContents());
+                            $inv->getInventory()->setContents($this->getEditedMenu($transaction->getPlayer(), $inventory)->getContents());
                         } else {
                             $this->sendCommandInItem($transaction->getPlayer(), $transaction->getOut(), $command);
                         }
@@ -246,9 +259,8 @@ Class CustomPanels extends PluginBase{
     }
 
     private function delCommands(): void{
-        $this->getLogger()->alert("Panel Komutları Kaldırılıyor...");
+        $this->getLogger()->alert("Panel Commands Removing...");
         foreach($this->commands as $command){
-            //$this->getLogger()->alert($command->getName() . " Komutu, Komut haritasından kaldırılıyor");
             $this->getServer()->getCommandMap()->unregister($command);
         }
     }
@@ -266,7 +278,6 @@ Class CustomPanels extends PluginBase{
             $command = new CU($this, $key, $arr["description"], $arr["permission"]);
             $commands[] = $command;
             $this->commands[] = $command;
-            //$this->getLogger()->alert("$key komutu Komut Haritasına eklendi");
         }
 
         $this->getServer()->getCommandMap()->registerAll("CustomPanels", $commands);
