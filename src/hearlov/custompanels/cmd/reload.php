@@ -22,7 +22,7 @@ class reload extends Command implements PluginOwned
     }
 
     public function execute(CommandSender $sender, string $commandLabel, array $args){
-        $this->plugin->reloadState(0);
+        $this->plugin->reloadState(0, $sender);
         $sender->sendMessage($this->plugin::PREFIX . " Server Panels Restarted.");
     }
 

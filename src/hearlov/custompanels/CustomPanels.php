@@ -2,21 +2,22 @@
 
 namespace hearlov\custompanels;
 
-use pocketmine\{console\ConsoleCommandSender,
+use hearlov\custompanels\cmd\reload;
+use hearlov\custompanels\utils\CommandUtil as CU;
+use hearlov\custompanels\utils\MoneyUtil as MU;
+use pocketmine\{command\CommandSender,
+    console\ConsoleCommandSender,
     inventory\SimpleInventory,
     item\Item,
     item\StringToItemParser,
     item\VanillaItems,
     player\Player,
     plugin\PluginBase,
-    utils\Config,
     scheduler\ClosureTask,
+    utils\Config,
     world\Position};
-use hearlov\custompanels\utils\CommandUtil as CU;
-use hearlov\custompanels\utils\MoneyUtil as MU;
-use muqsit\invmenu\{InvMenu, transaction\InvMenuTransaction, transaction\InvMenuTransactionResult, type\InvMenuTypeIds, InvMenuHandler};
 
-use hearlov\custompanels\cmd\reload;
+use hearlov\custompanels\libs\muqsit\invmenu\{transaction\InvMenuTransactionResult, InvMenu, InvMenuHandler, transaction\InvMenuTransaction, type\InvMenuTypeIds};
 
 
 Class CustomPanels extends PluginBase{
@@ -33,13 +34,6 @@ Class CustomPanels extends PluginBase{
 	private static $instance = null;
 
 	public function onEnable(): void{
-        if(!class_exists("muqsit\invmenu\InvMenu")){
-            $this->getLogger()->critical("Error, you must have InvMenu Virion to use this plugin. this Plugin disabled");
-            $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function (){
-                $this->getServer()->getPluginManager()->disablePlugin($this);
-            }), 40);
-            return;
-        }
         if(!file_exists($this->getDataFolder() . "config.yml")){
             $this->saveResource("Panel.yml");
         }
@@ -153,11 +147,10 @@ Class CustomPanels extends PluginBase{
     //STATE
 
 
-    public function reloadState(int $state){
+    public function reloadState(int $state, CommandSender $sender = null){
         $this->panels = [];
         if($state == 0) $this->delCommands();
         $files = glob($this->getDataFolder() . '*.yml', GLOB_ERR);
-        $this->getLogger()->alert("Panel Readers are being processed.\n");
         foreach($files as $file) {
             if(str_ends_with($file, "config.php")) continue;
             $yamldata = new Config($file, Config::YAML);
@@ -165,7 +158,7 @@ Class CustomPanels extends PluginBase{
             if(!(isset($data["items"]) && isset($data["type"]) && isset($data["name"]) && isset($data["command"]))) continue;
             if(!is_array($data["items"])) continue;
             //A
-            $this->getLogger()->notice($data["command"] . " panel is activating...");
+            if($sender !== null) $sender->sendMessage("§6".$data["command"] . " §3panel is activating...");
             $size = $data["type"] == "DOUBLE_CHEST" ? 54 : 27;
 
             $arr = [];
@@ -195,10 +188,10 @@ Class CustomPanels extends PluginBase{
             $arr["permission"] = $data["permission"] ?? "custompanels.openpanels";
             $this->panels[$data["command"]] = $arr;
             $this->panels[$data["command"]]["name"] = $data["name"];
-            $this->getLogger()->notice($data["command"] . " panel is loaded and has size $size " . count($arr["commands"]) . "Command has been loaded to 1 item.");
+            if($sender !== null) $sender->sendMessage("§6".$data["command"] . " §3panel is loaded and has size §3" . count($arr["commands"]) . " §3Command has been loaded to §6$size §3item.");
             //A
         }
-        $this->getLogger()->alert("Panel Readers processed. Menus are active\n");
+        if($sender !== null) $sender->sendMessage("§aPanel Readers processed. Menus are active\n");
         $this->initCommands($state);
         if($state == 0) $this->reloadCommandMap();
     }
@@ -259,7 +252,7 @@ Class CustomPanels extends PluginBase{
     }
 
     private function delCommands(): void{
-        $this->getLogger()->alert("Panel Commands Removing...");
+        //$this->getLogger()->alert("Panel Commands Removing...");
         foreach($this->commands as $command){
             $this->getServer()->getCommandMap()->unregister($command);
         }
