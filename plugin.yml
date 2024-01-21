@@ -2,7 +2,7 @@ name: CustomPanels
 main: hearlov\custompanels\CustomPanels
 author: Hearlov
 description: "Custom YAML Inventory Panels this BETA"
-version: 1.1-beta
+version: 1.1.43-beta
 api: 5.0.0
 softdepend:
   - EconomyAPI

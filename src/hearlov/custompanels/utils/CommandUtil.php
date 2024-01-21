@@ -7,6 +7,7 @@ use pocketmine\command\Command;
 use hearlov\custompanels\CustomPanels;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginOwned;
+use hearlov\custompanels\manager\OpenPanel;
 
 class CommandUtil extends Command implements PluginOwned{
 
@@ -28,7 +29,7 @@ class CommandUtil extends Command implements PluginOwned{
      */
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool{
         if(!$sender instanceof Player) return false;
-        $this->plugin->command($sender, explode(":", $commandLabel)[1] ?? $commandLabel);
+        OpenPanel::command($sender, explode(":", $commandLabel)[1] ?? $commandLabel);
         return true;
     }
 

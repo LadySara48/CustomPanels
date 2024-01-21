@@ -3,8 +3,7 @@
 namespace hearlov\custompanels;
 
 use hearlov\custompanels\cmd\reload;
-use hearlov\custompanels\utils\CommandUtil as CU;
-use hearlov\custompanels\utils\MoneyUtil as MU;
+use hearlov\custompanels\{utils\CommandUtil as CU, utils\MoneyUtil as MU, manager\AgFactory as AF, manager\OpenPanel, manager\InventoryDataManager};
 use pocketmine\{command\CommandSender,
     console\ConsoleCommandSender,
     inventory\SimpleInventory,
@@ -30,7 +29,8 @@ Class CustomPanels extends PluginBase{
     //Setup
     private $panels;
     private $commands = [];
-	
+    private $usedata = true;
+
 	private static $instance = null;
 
 	public function onEnable(): void{
@@ -40,11 +40,14 @@ Class CustomPanels extends PluginBase{
         $this->saveDefaultConfig();
 		$this->config = new Config($this->getDataFolder() . "config.yml", Config::YAML);
         $this->reloadState(1);
+        $this->usedata = $this->config->get("use-datas") ?? true;
 
         if(!InvMenuHandler::isRegistered()){
             InvMenuHandler::register($this);
         }
 
+        OpenPanel::setup($this, $this->usedata);
+        if($this->usedata) InventoryDataManager::setup($this);
         MU::setup($this->config->get("EconomyPlugin"));
 	}
 
@@ -74,33 +77,9 @@ Class CustomPanels extends PluginBase{
 
     //START PANEL STR
 
-    public function TextGenerate(Player $player, Item $item, String $cmd){
-        return str_replace(
-            [ //SIRALAMAYA GORE LISTE
-                "{player}", "{item_name}", "{item_vanilla_name}",
-                "{player_handitem_name}", "{player_handitem_vanilla_name}",
-                "{server_online}", "{server_max}", "{server_motd}",
-                "{random_player}",
-                "{money}", "{level}",
-                "{x}", "{y}", "{z}", "{world}",
-                "{language}", "{time}", "{year}", "{month}", "{day}",
-                "{hour}", "{minute}", "{second}"
-            ],
-            [ //SIRALAMAYA GORE LISTE
-                $player->getName(), $item->getName(), $item->getVanillaName(),
-                $player->getInventory()->getItemInHand()->getName(), $player->getInventory()->getItemInHand()->getVanillaName(),
-                count($this->getServer()->getOnlinePlayers()), $this->getServer()->getMaxPlayers(), $this->getServer()->getMotd(),
-                $this->getServer()->getOnlinePlayers()[array_rand($this->getServer()->getOnlinePlayers())]->getName(),
-                MU::getMoney($player->getName()), $player->getXpManager()->getXpLevel(),
-                $player->getPosition()->x, $player->getPosition()->y, $player->getPosition()->z, $player->getPosition()->getWorld()->getFolderName(),
-                $player->getLocale(), date("Y/m/d"), date("Y"), date("m"), date("d"),
-                date("H"), date("i"), date("s")
-            ],
-            $cmd);
-    }
-
-    public function sendCommandInItem(Player $player, Item $item, String $cmd): void{
-        $cmd = $this->TextGenerate($player, $item, $cmd);
+    public function sendCommandInItem(Player $player, Item $item, String $cmd, InvMenu &$inv): void{
+        $cmd = AF::TextGenerate($this->getServer(), $player, $item, $cmd, $inv);
+        if($this->usedata) $cmd = AF::getDataStatic($cmd);
         if(str_starts_with($cmd, "cmd=")){
             $command = substr($cmd, 4);
             $this->getServer()->dispatchCommand(new ConsoleCommandSender($this->getServer(), $this->getServer()->getLanguage()), "$command");
@@ -119,8 +98,8 @@ Class CustomPanels extends PluginBase{
                 return;
             }
             $command = substr($command, (strlen($time) + 1));
-            $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($player, $item, $command){
-                $this->sendCommandInItem($player, $item, $command);
+            $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($player, $item, $command, $inv){
+                $this->sendCommandInItem($player, $item, $command, $inv);
             }), (int)($time / 50));
         }elseif(str_starts_with($cmd, "tp=")){
             $command = substr($cmd, 3);
@@ -132,27 +111,41 @@ Class CustomPanels extends PluginBase{
         }elseif(str_starts_with($cmd, "open=")){
             $command = substr($cmd, 5);
             if($this->getPanel($command) === null) return;
-            $this->sendCommandInItem($player, $item, "rca=custompanels:$command");
+            $this->sendCommandInItem($player, $item, "rca=custompanels:$command", $inv);
         }elseif(str_starts_with($cmd, "give=")){
             $command = substr($cmd, 5);
             $arg = explode(" ", $command);
             if(count($arg) < 1) return;
             $item = StringToItemParser::getInstance()->parse($arg[0]);
+            if($item === null || $arg[0] == "air") return;
             if(isset($arg[1]) && is_numeric($arg[1]) && (1 <= $arg[1] && 64 >= $arg[1])) $item->setCount($arg[1]);
-            if($item === null) return;
             if($player->getInventory()->canAddItem($item)) $player->getInventory()->addItem($item);
+        }elseif(str_starts_with($cmd, "set_item=")){
+            $command = substr($cmd, 9);
+            $arg = explode(" ", $command);
+            if(count($arg) < 1) return;
+            $item = StringToItemParser::getInstance()->parse($arg[0]);
+            if($item === null || $item->getVanillaName() == "Air") return;
+            if(isset($arg[1]) && is_numeric($arg[1]) && (1 <= $arg[1] && 64 >= $arg[1])) $item->setCount($arg[1]);
+            if(isset($arg[2]) && is_numeric($arg[2]) && $inv->getInventory()->getSize() > $arg[2]) $inv->getInventory()->setItem($arg[2], $item);
+        }elseif(str_starts_with($cmd, "set_data=")){
+            if(!$this->usedata) return;
+            $command = substr($cmd, 9);
+            if(count(explode(" ", $command)) < 1) return;
+            $spc = ["exp" => explode(" ", $command)[0], "cont" => substr($command, strlen(explode(" ", $command)[0]) + 1)];
+            InventoryDataManager::setData($spc["exp"], $spc["cont"]);
         }
+
     }
 
     //STATE
-
 
     public function reloadState(int $state, CommandSender $sender = null){
         $this->panels = [];
         if($state == 0) $this->delCommands();
         $files = glob($this->getDataFolder() . '*.yml', GLOB_ERR);
         foreach($files as $file) {
-            if(str_ends_with($file, "config.php")) continue;
+            if(str_ends_with($file, "config.yml") || str_ends_with($file, "datas.yml")) continue;
             $yamldata = new Config($file, Config::YAML);
             $data = $yamldata->get("panel");
             if(!(isset($data["items"]) && isset($data["type"]) && isset($data["name"]) && isset($data["command"]))) continue;
@@ -175,7 +168,7 @@ Class CustomPanels extends PluginBase{
                 if($itm === null) continue;
                 if($itm->getVanillaName() == "Air"){
                     $inv->clear($index);
-                }else {
+                }else{
                     $itm->setCustomName($item["name"] ?? "");
                     $inv->setItem($index, $itm->setCount($item["count"] ?? 1));
                 }
@@ -185,6 +178,8 @@ Class CustomPanels extends PluginBase{
             $arr["inventory"] = $inv;
             $arr["readonly"]["general"] = $data["readonly"] ?? true; //Default in True
             $arr["description"] = $data["description"] ?? "";
+            if(isset($data["panel-open-commands"])) $arr["opencmd"] = $data["panel-open-commands"];
+            if(isset($data["panel-close-commands"])) $arr["closecmd"] = $data["panel-close-commands"];
             $arr["permission"] = $data["permission"] ?? "custompanels.openpanels";
             $this->panels[$data["command"]] = $arr;
             $this->panels[$data["command"]]["name"] = $data["name"];
@@ -194,55 +189,6 @@ Class CustomPanels extends PluginBase{
         if($sender !== null) $sender->sendMessage("§aPanel Readers processed. Menus are active\n");
         $this->initCommands($state);
         if($state == 0) $this->reloadCommandMap();
-    }
-
-    private function getEditedMenu(Player $player, SimpleInventory $inv): SimpleInventory{
-        $newenv = new SimpleInventory($inv->getSize());
-        $newenv->setContents($inv->getContents());
-        foreach($newenv->getContents() as $index => $item){
-            if($item->hasCustomName()) $newenv->setItem($index, $item->setCustomName($this->TextGenerate($player, $item, $item->getCustomname())));
-        }
-        return $newenv;
-    }
-
-    public function command(Player $player, string $command){
-        if(!in_array($command, array_keys($this->getPanels()))) return;
-        $panel = $this->getPanel($command);
-        if(!isset($panel)) return;
-        $inventory = $panel["inventory"] ?? null;
-        if(!$inventory instanceof SimpleInventory) return;
-
-        $envanter = new SimpleInventory($inventory->getSize());
-        $envanter->setContents($this->getEditedMenu($player, $inventory)->getContents());
-        $inv = InvMenu::create($inventory->getSize() == 54 ? InvMenuTypeIds::TYPE_DOUBLE_CHEST : InvMenuTypeIds::TYPE_CHEST, $envanter);
-        foreach($inv->getInventory()->getContents() as $index => $item){ $inv->getInventory()->setItem($index, $item->setCustomName($this->TextGenerate($player, $item, $item->getCustomname()))); }
-        $inv->setName($panel["name"]);
-        if(isset($panel["commands"])) {
-            $inv->setListener(function (InvMenuTransaction $transaction) use ($inv, $panel, $inventory): InvMenuTransactionResult {
-                $instance = false;
-                $index = $transaction->getAction()->getSlot();
-                if((isset($panel["readonly"][$index]) && !$panel["readonly"][$index]) || !$panel["readonly"]["general"]) $instance = true;
-
-                if (isset($panel["commands"]) && in_array($index, array_keys($panel["commands"]))) {
-
-                    $commands = $panel["commands"][$index];
-                    foreach ($commands as $command) {
-                        if ($command == "close") {
-                            $inv->onClose($transaction->getPlayer());
-                        } elseif ($command == "reload") {
-                            $inv->getInventory()->setContents($this->getEditedMenu($transaction->getPlayer(), $inventory)->getContents());
-                        } else {
-                            $this->sendCommandInItem($transaction->getPlayer(), $transaction->getOut(), $command);
-                        }
-                    }
-
-                }
-
-                if(!$instance) return $transaction->discard(); else return $transaction->continue();
-            });
-        }
-        $inv->send($player);
-
     }
 
     private function reloadCommandMap(){

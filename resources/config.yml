@@ -3,4 +3,9 @@
 # EconomyAPI
 # BedrockEconomy (Due to some instant data reading problems, the money display feature in this plugin will be active in the future.)
 EconomyPlugin: EconomyAPI
+
+#Data Resource Monitor On/Off Default = True
+# true = Ram usage+
+# false = Not Usage
+use-datas: true
 ...

@@ -5,6 +5,12 @@ panel:
   type: CHEST
   readonly: true
   permission: custompanels.settings
+  panel-open-commands:
+    - "msg=Panel Opened"
+  panel-close-commands:
+    - "msg=Panel Closed"
+    - "msg=Panel Closed for the {player_handitem_name} in item handed"
+    - "set_data={player}-lasthand {player_handitem_meta}"
   empty: glass
   items:
     0:
