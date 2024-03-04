@@ -1,8 +1,8 @@
 name: CustomPanels
 main: hearlov\custompanels\CustomPanels
 author: Hearlov
-description: "Custom YAML Inventory Panels this BETA"
-version: 1.1.43-beta
+description: "Custom YAML Panels in Inventory. This plugin in BETA. (Performance Update COOMING SOON)"
+version: 1.2.54-beta
 api: 5.0.0
 softdepend:
   - EconomyAPI
