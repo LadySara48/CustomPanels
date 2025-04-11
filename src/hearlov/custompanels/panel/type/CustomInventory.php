@@ -50,7 +50,7 @@ class CustomInventory{
     }
 
     public function getCommand(int $index): ?array{
-        return isset($this->commands[$index]) ? $this->commands[$index] : null;
+        return $this->commands[$index] ?? null;
     }
 
     public function allReadonly(): array{
@@ -58,7 +58,7 @@ class CustomInventory{
     }
 
     public function getReadonly(int $index): bool{
-        return isset($this->readonly[$index]) ? $this->readonly[$index] : true; //Def True
+        return $this->readonly[$index] ?? true; //Def True
     }
 
     public function getInventory(): SimpleInventory{

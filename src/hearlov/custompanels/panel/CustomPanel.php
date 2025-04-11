@@ -38,8 +38,8 @@ class CustomPanel{
         $this->permission = $permission;
         $this->description = $description;
         $this->readonly = $readonly;
-        $this->opencommands = $panel_commands["open"] ?? null;
-        $this->closecommands = $panel_commands["close"] ?? null;
+        $this->opencommands = $panel_commands["open"] ?? [];
+        $this->closecommands = $panel_commands["close"] ?? [];
 
         $item = StringToItemParser::getInstance()->parse($empty);
         if($item instanceof Item) $this->empty = $item;

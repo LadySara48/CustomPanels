@@ -162,6 +162,11 @@ Class CustomPanels extends PluginBase{
             $player->getInventory()->removeItem($item);
             $command = substr($command, strlen($exp[0]) + strlen($exp[1]) + 2);
             $this->sendCommandInItem($player, $item, $command, $inv);
+        }elseif(str_starts_with($cmd, "if")){
+            /*
+             * $command = substr($cmd, 2);
+             * COOMING SOON
+             */
         }
 
     }
