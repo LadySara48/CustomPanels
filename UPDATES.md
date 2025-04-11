@@ -2,7 +2,7 @@
 
 *Expected features*:
 - Adding menus for the plugin using more organized features and API ✔️
-- Money process. "buy, buycmd, sell, sellcmd" commands and "{money}" variable ⭕
+- Money process. "buy, buycmd, sell, sellcmd" commands and "{money}" variable ✔️
 - Hopper added ✔️
 - More organized data ✔️
 - More variables (Get Panel Inventory Slots) ⭕
